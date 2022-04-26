@@ -1,21 +1,25 @@
 package main
 
 import (
-	"fmt"
+	"embed"
 	"github.com/julienschmidt/httprouter"
 	"github.com/stretchr/testify/assert"
 	"io"
+	"io/fs"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 )
 
-func TestRouter(t *testing.T) {
+//go:embed resources
+var resources embed.FS
+
+func TestServeFile(t *testing.T) {
 	router := httprouter.New()
-	router.GET("/", func(writer http.ResponseWriter, request *http.Request, _ httprouter.Params) {
-		fmt.Fprint(writer, "Hello GET")
-	})
-	request := httptest.NewRequest(http.MethodGet, "http://localhost:8080/", nil)
+	directory, _ := fs.Sub(resources, "resources")
+	router.ServeFiles("/files/*filepath", http.FS(directory))
+
+	request := httptest.NewRequest(http.MethodGet, "http://localhost:8080/files/hello.txt", nil)
 	recorder := httptest.NewRecorder()
 
 	router.ServeHTTP(recorder, request)
@@ -23,5 +27,21 @@ func TestRouter(t *testing.T) {
 	response := recorder.Result()
 	body, _ := io.ReadAll(response.Body)
 
-	assert.Equal(t, "Hello GET", string(body))
+	assert.Equal(t, "Hello HttpRouter", string(body))
+}
+
+func TestServeFileGoodBye(t *testing.T) {
+	router := httprouter.New()
+	directory, _ := fs.Sub(resources, "resources")
+	router.ServeFiles("/files/*filepath", http.FS(directory))
+
+	request := httptest.NewRequest(http.MethodGet, "http://localhost:8080/files/goodbye.txt", nil)
+	recorder := httptest.NewRecorder()
+
+	router.ServeHTTP(recorder, request)
+
+	response := recorder.Result()
+	body, _ := io.ReadAll(response.Body)
+
+	assert.Equal(t, "GoodBye HttpRouter", string(body))
 }
