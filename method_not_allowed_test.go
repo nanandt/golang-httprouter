@@ -10,11 +10,14 @@ import (
 	"testing"
 )
 
-func TestNotFound(t *testing.T) {
+func TestMethodNotAllowed(t *testing.T) {
 	router := httprouter.New()
 
-	router.NotFound = http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
-		fmt.Fprint(writer, "Gak ketemu nih")
+	router.MethodNotAllowed = http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+		fmt.Fprint(writer, "Gak Boleh")
+	})
+	router.POST("/", func(writer http.ResponseWriter, request *http.Request, params httprouter.Params) {
+		fmt.Fprint(writer, "POST")
 	})
 
 	request := httptest.NewRequest(http.MethodGet, "http://localhost:8080/", nil)
@@ -25,5 +28,5 @@ func TestNotFound(t *testing.T) {
 	response := recorder.Result()
 	body, _ := io.ReadAll(response.Body)
 
-	assert.Equal(t, "Gak ketemu nih", string(body))
+	assert.Equal(t, "Gak Boleh", string(body))
 }
