@@ -10,14 +10,15 @@ import (
 	"testing"
 )
 
-func TestParams(t *testing.T) {
+func TestPatternNamedParameter(t *testing.T) {
 	router := httprouter.New()
-	router.GET("/products/:id", func(writer http.ResponseWriter, request *http.Request, params httprouter.Params) {
+	router.GET("/products/:id/items/:itemId", func(writer http.ResponseWriter, request *http.Request, params httprouter.Params) {
 		id := params.ByName("id")
-		text := "Product " + id
+		itemId := params.ByName("itemId")
+		text := "Product " + id + " Item " + itemId
 		fmt.Fprint(writer, text)
 	})
-	request := httptest.NewRequest(http.MethodGet, "http://localhost:8080/products/1", nil)
+	request := httptest.NewRequest(http.MethodGet, "http://localhost:8080/products/1/items/1", nil)
 	recorder := httptest.NewRecorder()
 
 	router.ServeHTTP(recorder, request)
@@ -25,5 +26,23 @@ func TestParams(t *testing.T) {
 	response := recorder.Result()
 	body, _ := io.ReadAll(response.Body)
 
-	assert.Equal(t, "Product 1", string(body))
+	assert.Equal(t, "Product 1 Item 1", string(body))
+}
+
+func TestPatternCatchAllParameter(t *testing.T) {
+	router := httprouter.New()
+	router.GET("/images/*image", func(writer http.ResponseWriter, request *http.Request, params httprouter.Params) {
+		image := params.ByName("image")
+		text := "Image : " + image
+		fmt.Fprint(writer, text)
+	})
+	request := httptest.NewRequest(http.MethodGet, "http://localhost:8080/images/small/profile.png", nil)
+	recorder := httptest.NewRecorder()
+
+	router.ServeHTTP(recorder, request)
+
+	response := recorder.Result()
+	body, _ := io.ReadAll(response.Body)
+
+	assert.Equal(t, "Image : /small/profile.png", string(body))
 }
